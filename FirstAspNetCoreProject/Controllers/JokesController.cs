@@ -69,10 +69,12 @@ namespace FirstAspNetCoreProject.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,JokeQuestion,JokeAnswer")] Joke joke)
+        public async Task<IActionResult> Create([Bind("ID,JokeOwner,JokeQuestion,JokeAnswer")] Joke joke)
         {
             if (ModelState.IsValid)
             {
+                joke.JokeOwner = User.Identity.Name;
+
                 _context.Add(joke);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
