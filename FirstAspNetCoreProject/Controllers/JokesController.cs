@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using FirstAspNetCoreProject.Data;
 using FirstAspNetCoreProject.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FirstAspNetCoreProject.Controllers
 {
@@ -56,6 +57,7 @@ namespace FirstAspNetCoreProject.Controllers
         }
 
         // GET: Jokes/Create
+        [Authorize]
         public IActionResult Create()
         {
             return View();
