@@ -11,7 +11,7 @@ namespace FirstAspNetCoreProject.Models
         public string JokeOwner { get; set; }
         public string JokeQuestion { get; set; }
         public string JokeAnswer { get; set; }
-
+        public string JokeImagePath { get; set; }
         public Joke()
         {
 

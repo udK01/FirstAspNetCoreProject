@@ -8,15 +8,20 @@ using Microsoft.EntityFrameworkCore;
 using FirstAspNetCoreProject.Data;
 using FirstAspNetCoreProject.Models;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
 
 namespace FirstAspNetCoreProject.Controllers
 {
     public class JokesController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _environment;
 
-        public JokesController(ApplicationDbContext context)
+        public JokesController(ApplicationDbContext context, IWebHostEnvironment environment)
         {
+            _environment = environment;
             _context = context;
         }
 
@@ -69,11 +74,34 @@ namespace FirstAspNetCoreProject.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,JokeOwner,JokeQuestion,JokeAnswer")] Joke joke)
+        public async Task<IActionResult> Create([Bind("ID,JokeOwner,JokeQuestion,JokeAnswer")] Joke joke, IFormFile JokeImagePath)
         {
             if (ModelState.IsValid)
             {
                 joke.JokeOwner = User.Identity.Name;
+
+                if (JokeImagePath != null && JokeImagePath.Length > 0)
+                {
+                    // Generate a unique file name (e.g., using a GUID).
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + JokeImagePath.FileName;
+
+                    System.Diagnostics.Debug.WriteLine("File Name: " + uniqueFileName);
+
+                    // Set the file path in the Joke model.
+                    joke.JokeImagePath = uniqueFileName;
+
+                    // Specify the directory where you want to save the file.
+                    var imageFolder = Path.Combine(_environment.WebRootPath, "images");
+
+                    // Combine the directory and file name to get the full path.
+                    var filePath = Path.Combine(imageFolder, uniqueFileName);
+
+                    // Save the file to the server.
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await JokeImagePath.CopyToAsync(stream);
+                    }
+                }
 
                 _context.Add(joke);
                 await _context.SaveChangesAsync();
