@@ -189,6 +189,16 @@ namespace FirstAspNetCoreProject.Controllers
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             var joke = await _context.Joke.FindAsync(id);
+            if (!string.IsNullOrEmpty(joke.JokeImagePath))
+            {
+                // Construct the full file path based on your project's structure.
+                var filePath = Path.Combine(_environment.WebRootPath, "images", joke.JokeImagePath);
+
+                if (System.IO.File.Exists(filePath))
+                {
+                    System.IO.File.Delete(filePath);
+                }
+            }
             _context.Joke.Remove(joke);
             await _context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
