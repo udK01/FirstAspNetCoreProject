@@ -74,7 +74,7 @@ namespace FirstAspNetCoreProject.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("ID,JokeOwner,JokeQuestion,JokeAnswer")] Joke joke, IFormFile JokeImagePath)
+        public async Task<IActionResult> Create([Bind("ID,JokeQuestion,JokeAnswer")] Joke joke, IFormFile JokeImagePath)
         {
             if (ModelState.IsValid)
             {
@@ -84,8 +84,6 @@ namespace FirstAspNetCoreProject.Controllers
                 {
                     // Generate a unique file name (e.g., using a GUID).
                     var uniqueFileName = Guid.NewGuid().ToString() + "_" + JokeImagePath.FileName;
-
-                    System.Diagnostics.Debug.WriteLine("File Name: " + uniqueFileName);
 
                     // Set the file path in the Joke model.
                     joke.JokeImagePath = uniqueFileName;
@@ -133,7 +131,7 @@ namespace FirstAspNetCoreProject.Controllers
         [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("ID,JokeQuestion,JokeAnswer")] Joke joke)
+        public async Task<IActionResult> Edit(int id, [Bind("ID,JokeQuestion,JokeAnswer,JokeImagePath")] Joke joke, IFormFile JokeImagePath)
         {
             if (id != joke.ID)
             {
@@ -142,14 +140,51 @@ namespace FirstAspNetCoreProject.Controllers
 
             if (ModelState.IsValid)
             {
+                var originalJoke = await _context.Joke.FindAsync(id);
+
+                originalJoke.JokeQuestion = joke.JokeQuestion;
+                originalJoke.JokeAnswer = joke.JokeAnswer;
+
+                // Check if a new image has been uploaded
+                if (JokeImagePath != null && JokeImagePath.Length > 0)
+                {
+                    // Specify the directory where you want to save the file.
+                    var imageFolder = Path.Combine(_environment.WebRootPath, "images");
+
+                    // Delete the old image if it exists
+                    if (!string.IsNullOrEmpty(originalJoke.JokeImagePath))
+                    {
+                        var oldImagePath = Path.Combine(imageFolder, originalJoke.JokeImagePath);
+                        if (System.IO.File.Exists(oldImagePath))
+                        {
+                            System.IO.File.Delete(oldImagePath);
+                        }
+                    }
+
+                    // Generate a unique file name for the new image (e.g., using a GUID).
+                    var uniqueFileName = Guid.NewGuid().ToString() + "_" + JokeImagePath.FileName;
+
+                    // Set the file path in the Joke model.
+                    originalJoke.JokeImagePath = uniqueFileName;
+
+                    // Combine the directory and file name to get the full path.
+                    var filePath = Path.Combine(imageFolder, uniqueFileName);
+
+                    // Save the new file to the server.
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await JokeImagePath.CopyToAsync(stream);
+                    }
+                }
+
                 try
                 {
-                    _context.Update(joke);
+                    _context.Update(originalJoke);
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!JokeExists(joke.ID))
+                    if (!JokeExists(originalJoke.ID))
                     {
                         return NotFound();
                     }
