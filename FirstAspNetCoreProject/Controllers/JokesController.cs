@@ -100,7 +100,6 @@ namespace FirstAspNetCoreProject.Controllers
                         await JokeImagePath.CopyToAsync(stream);
                     }
                 }
-
                 _context.Add(joke);
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
